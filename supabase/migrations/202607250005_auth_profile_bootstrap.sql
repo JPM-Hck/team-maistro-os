@@ -53,10 +53,6 @@ order by users.created_at
 limit 1
 on conflict (id) do nothing;
 
-create policy "users read own profile"
-on public.profiles for select to authenticated
-using (id = auth.uid());
-
 create policy "administrators manage profiles"
 on public.profiles for all to authenticated
 using (public.current_app_role() = 'administrator')

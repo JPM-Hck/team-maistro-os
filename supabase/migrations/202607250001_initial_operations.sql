@@ -358,6 +358,7 @@ alter table public.requisitions enable row level security;
 alter table public.requisition_items enable row level security;
 alter table public.inventory_reservations enable row level security;
 alter table public.inventory_movements enable row level security;
+alter table public.idempotency_keys enable row level security;
 alter table public.audit_log enable row level security;
 
 create policy "authenticated users read operational data"

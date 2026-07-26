@@ -85,19 +85,17 @@ Sin variables de Supabase, la página principal muestra una guía de configuraci
 3. Agregar la URL y publishable key.
 4. Ejecutar, en orden, todas las migraciones de `supabase/migrations`.
 5. Cargar `supabase/seed.sql` en un entorno de desarrollo.
-6. Crear el primer usuario en Supabase Auth.
-7. Insertar su `id` en `profiles` con rol `administrator`.
-8. Copiar las dos variables públicas al entorno de Vercel y volver a desplegar.
+6. Crear el primer usuario en Supabase Auth; el trigger lo registra como `administrator`.
+7. Copiar las dos variables públicas al entorno de Vercel y volver a desplegar.
 
 Variables:
 
 ```text
 NEXT_PUBLIC_SUPABASE_URL
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
-SUPABASE_SERVICE_ROLE_KEY
 ```
 
-La service role nunca debe exponerse al navegador ni subirse al repositorio.
+La aplicación no necesita una service role. Ninguna clave secreta debe exponerse al navegador ni subirse al repositorio.
 
 ## Roles iniciales
 
