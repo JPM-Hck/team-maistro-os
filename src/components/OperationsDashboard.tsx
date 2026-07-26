@@ -1,7 +1,10 @@
 "use client";
 
 import { FormEvent, useMemo, useState } from "react";
+import { ProjectsView } from "@/components/projects/ProjectsView";
+import { useProjects } from "@/components/projects/useProjects";
 import { demoTools, initialInventory, marbleRecipe } from "@/domain/demo-data";
+import type { Project } from "@/domain/projects/types";
 import {
   calculateRequirements,
   getAvailableStock,
@@ -88,6 +91,9 @@ export function OperationsDashboard() {
   const [activity, setActivity] = useState<string[]>([
     "Proyecto Casa Lomas cargado con receta aprobada.",
   ]);
+  const projectsController = useProjects();
+  const activeProject = projectsController.activeProject;
+  const activeProjectName = activeProject?.name ?? "Casa Lomas";
 
   const calculatedRequirements = useMemo(
     () => calculateRequirements(task.quantity, marbleRecipe, inventory),
@@ -187,7 +193,7 @@ export function OperationsDashboard() {
     summary: {
       eyebrow: "OPERACIÓN / RESUMEN",
       title: "Buenos días, Juan Pablo",
-      subtitle: "Esto es lo que requiere atención hoy en Casa Lomas.",
+      subtitle: `Esto es lo que requiere atención hoy en ${activeProjectName}.`,
     },
     projects: {
       eyebrow: "OPERACIÓN / PROYECTOS",
@@ -284,6 +290,7 @@ export function OperationsDashboard() {
         {section === "summary" && (
           <SummaryView
             activity={activity}
+            activeProject={activeProject}
             handleReceive={handleReceive}
             handleReserve={handleReserve}
             inventory={inventory}
@@ -316,7 +323,9 @@ export function OperationsDashboard() {
             status={requisitionStatus}
           />
         )}
-        {section === "projects" && <ProjectsView task={task} />}
+        {section === "projects" && (
+          <ProjectsView controller={projectsController} />
+        )}
         {section === "equipment" && <EquipmentView />}
         {section === "payroll" && <PayrollView />}
       </main>
@@ -334,6 +343,7 @@ export function OperationsDashboard() {
 }
 
 function SummaryView({
+  activeProject,
   activity,
   handleReceive,
   handleReserve,
@@ -347,6 +357,7 @@ function SummaryView({
   task,
   totalAvailable,
 }: {
+  activeProject: Project | null;
   activity: string[];
   handleReceive: () => void;
   handleReserve: () => void;
@@ -374,7 +385,12 @@ function SummaryView({
       </section>
 
       <section className="metrics" aria-label="Indicadores principales">
-        <MetricCard label="Avance del proyecto" value="38%" trend="+6% esta semana" tone="ink" />
+        <MetricCard
+          label="Avance del proyecto"
+          value={`${activeProject?.progress ?? 38}%`}
+          trend={activeProject?.name ?? "Casa Lomas"}
+          tone="ink"
+        />
         <MetricCard
           label="Tareas bloqueadas"
           value={task.status === "blocked" ? "1" : "0"}
@@ -399,7 +415,7 @@ function SummaryView({
           task={task}
         />
         <aside className="right-column">
-          <ProjectCard />
+          <ActiveProjectCard project={activeProject} />
           <RequisitionCard lines={requisitionLines} status={requisitionStatus} />
           <ActivityCard activity={activity} />
         </aside>
@@ -730,33 +746,6 @@ function PurchasesView({
   );
 }
 
-function ProjectsView({ task }: { task: PlannedTask }) {
-  return (
-    <section className="project-board">
-      <article className="panel project-tile">
-        <div className="project-tile-cover"><span>CL</span><b>En ejecución</b></div>
-        <div className="project-tile-body">
-          <p className="eyebrow">REMODELACIÓN INTEGRAL</p>
-          <h2>Casa Lomas</h2>
-          <p>CDMX · Alejandro S.</p>
-          <div className="project-progress">
-            <div><span>Avance físico</span><b>38%</b></div>
-            <div className="progress-track"><i style={{ width: "38%" }} /></div>
-          </div>
-          <dl>
-            <div><dt>Tarea actual</dt><dd>{task.name}</dd></div>
-            <div><dt>Fecha objetivo</dt><dd>18 sep 2026</dd></div>
-            <div><dt>Presupuesto</dt><dd>$2,500,000</dd></div>
-          </dl>
-        </div>
-      </article>
-      <button className="panel add-project-tile" type="button">
-        <span>+</span><b>Nuevo proyecto</b><small>Preparado para el siguiente checkpoint</small>
-      </button>
-    </section>
-  );
-}
-
 function EquipmentView() {
   const equipment = [
     ["Cortadora de piso", "CT-014", "Disponible", "green"],
@@ -824,22 +813,37 @@ function RequirementsTable({ requirements, compact = false }: { requirements: Re
   );
 }
 
-function ProjectCard() {
+function ActiveProjectCard({ project }: { project: Project | null }) {
+  const name = project?.name ?? "Casa Lomas";
+  const projectType = project?.projectType ?? "Remodelación integral";
+  const location = project?.location ?? "CDMX";
+  const progress = project?.progress ?? 38;
+  const budget = project?.budget ?? 2_500_000;
+  const responsible = project?.responsible ?? "Alejandro S.";
+  const targetDate = project?.targetDate
+    ? new Intl.DateTimeFormat("es-MX", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+        timeZone: "UTC",
+      }).format(new Date(`${project.targetDate}T00:00:00Z`))
+    : "18 sep 2026";
+
   return (
     <article className="panel project-card">
       <div className="panel-head compact">
-        <div><p className="eyebrow">PROYECTO ACTIVO</p><h2>Casa Lomas</h2></div>
+        <div><p className="eyebrow">PROYECTO ACTIVO</p><h2>{name}</h2></div>
         <button aria-label="Opciones del proyecto" type="button">•••</button>
       </div>
-      <p className="muted">Remodelación integral · CDMX</p>
+      <p className="muted">{projectType} · {location}</p>
       <div className="project-progress">
-        <div><span>Avance físico</span><b>38%</b></div>
-        <div className="progress-track"><i style={{ width: "38%" }} /></div>
+        <div><span>Avance físico</span><b>{progress}%</b></div>
+        <div className="progress-track"><i style={{ width: `${progress}%` }} /></div>
       </div>
       <dl>
-        <div><dt>Presupuesto</dt><dd>$2,500,000</dd></div>
-        <div><dt>Responsable</dt><dd>Alejandro S.</dd></div>
-        <div><dt>Fecha objetivo</dt><dd>18 sep 2026</dd></div>
+        <div><dt>Presupuesto</dt><dd>{new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN", maximumFractionDigits: 0 }).format(budget)}</dd></div>
+        <div><dt>Responsable</dt><dd>{responsible}</dd></div>
+        <div><dt>Fecha objetivo</dt><dd>{targetDate}</dd></div>
       </dl>
     </article>
   );
