@@ -678,3 +678,84 @@ button:focus-visible { outline: 3px solid rgba(49, 94, 145, 0.28); outline-offse
   .planner-actions.project-detail-actions { align-items: stretch; flex-direction: column; }
   .project-detail-actions .success-message { margin-right: 0; }
 }
+
+/* Inventory CRUD */
+.inventory-workspace { display: grid; gap: 15px; }
+.inventory-toolbar {
+  display: grid; grid-template-columns: 1fr minmax(270px, 0.85fr) auto;
+  align-items: center; gap: 16px; padding: 18px 20px;
+}
+.inventory-toolbar h2 { margin: 0; font-size: 17px; }
+.inventory-toolbar small { color: var(--muted); font-size: 9px; }
+.inventory-filters {
+  grid-column: 1 / -1; display: flex; align-items: center; flex-wrap: wrap; gap: 7px;
+}
+.inventory-filters select, .inventory-filters button {
+  min-height: 34px; padding: 0 12px; border: 1px solid var(--line); border-radius: 999px;
+  color: #65736d; background: #fff; font: inherit; font-size: 9px; font-weight: 750;
+}
+.inventory-filters select { min-width: 205px; border-radius: 8px; cursor: pointer; }
+.inventory-filters button { cursor: pointer; }
+.inventory-filters button.active {
+  color: var(--green); border-color: #a9c9bb; background: var(--green-soft);
+}
+.inventory-card-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 330px), 1fr)); gap: 15px;
+}
+.inventory-record { display: grid; align-content: start; gap: 15px; padding: 18px; }
+.inventory-record-archived { opacity: 0.7; }
+.inventory-record-head {
+  display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 11px;
+}
+.inventory-record-icon {
+  width: 39px; height: 39px; display: grid; place-items: center; border-radius: 10px;
+  color: var(--green); background: var(--green-soft); font-weight: 900;
+}
+.inventory-record-head > div { min-width: 0; display: grid; gap: 3px; }
+.inventory-record-head small {
+  color: var(--muted); font-size: 8px; font-weight: 800; letter-spacing: 0.06em;
+}
+.inventory-record h3 {
+  overflow: hidden; margin: 0; font-size: 14px; text-overflow: ellipsis; white-space: nowrap;
+}
+.inventory-assignment {
+  max-width: 140px; overflow: hidden; padding: 6px 8px; border-radius: 999px;
+  color: #315e91; background: #e9f0f8; font-size: 8px; font-weight: 800;
+  text-overflow: ellipsis; white-space: nowrap;
+}
+.inventory-assignment.unassigned { color: #626b67; background: #edf0ee; }
+.inventory-record > p {
+  min-height: 30px; margin: 0; color: var(--muted); font-size: 9px; line-height: 1.6;
+}
+.inventory-stock-grid {
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px;
+  overflow: hidden; margin: 0; border: 1px solid var(--line); border-radius: 10px; background: var(--line);
+}
+.inventory-stock-grid div { display: grid; gap: 4px; padding: 11px; background: #f9faf9; }
+.inventory-stock-grid dt { color: var(--muted); font-size: 8px; }
+.inventory-stock-grid dd { margin: 0; font-size: 10px; font-weight: 800; }
+.inventory-record .inventory-shortage {
+  min-height: auto; padding: 8px 10px; border-radius: 7px;
+  color: #984817; background: var(--orange-soft); font-weight: 700;
+}
+.inventory-record .project-card-actions { margin-top: auto; }
+.inventory-record .project-card-actions .muted { margin-right: auto; font-size: 9px; }
+.inventory-modal { width: min(760px, 100%); }
+.inventory-modal .field textarea {
+  width: 100%; min-height: 82px; padding: 10px 11px; border: 1px solid var(--line);
+  border-radius: 9px; color: var(--ink); background: #fafbfa; font: inherit; resize: vertical;
+}
+
+@media (max-width: 900px) {
+  .inventory-toolbar { grid-template-columns: 1fr auto; }
+  .inventory-toolbar .project-search { grid-column: 1 / -1; grid-row: 2; }
+}
+@media (max-width: 560px) {
+  .inventory-toolbar { grid-template-columns: 1fr; }
+  .inventory-toolbar .project-search { grid-column: auto; grid-row: auto; }
+  .inventory-toolbar .primary-button { width: 100%; }
+  .inventory-filters { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 4px; }
+  .inventory-filters > * { flex: 0 0 auto; }
+  .inventory-record-head { grid-template-columns: auto 1fr; }
+  .inventory-assignment { grid-column: 1 / -1; max-width: 100%; justify-self: start; }
+}

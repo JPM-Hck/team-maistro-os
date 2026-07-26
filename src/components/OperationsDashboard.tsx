@@ -1,6 +1,8 @@
 "use client";
 
 import { FormEvent, useMemo, useState } from "react";
+import { InventoryView } from "@/components/inventory/InventoryView";
+import { useInventory } from "@/components/inventory/useInventory";
 import { ProjectsView } from "@/components/projects/ProjectsView";
 import { useProjects } from "@/components/projects/useProjects";
 import { demoTools, initialInventory, marbleRecipe } from "@/domain/demo-data";
@@ -81,7 +83,6 @@ const initialTask: PlannedTask = {
 export function OperationsDashboard() {
   const [section, setSection] = useState<SectionId>("summary");
   const [plannerOpen, setPlannerOpen] = useState(false);
-  const [inventory, setInventory] = useState<InventoryItem[]>(initialInventory);
   const [phase, setPhase] = useState<DemoPhase>("unplanned");
   const [task, setTask] = useState<PlannedTask>(initialTask);
   const [requisitionStatus, setRequisitionStatus] = useState<RequisitionStatus | null>(null);
@@ -92,6 +93,8 @@ export function OperationsDashboard() {
     "Proyecto Casa Lomas cargado con receta aprobada.",
   ]);
   const projectsController = useProjects();
+  const inventoryController = useInventory();
+  const inventory = inventoryController.activeItems;
   const activeProject = projectsController.activeProject;
   const activeProjectName = activeProject?.name ?? "Casa Lomas";
 
@@ -136,7 +139,9 @@ export function OperationsDashboard() {
     setRequisitionStatus(result.requisition?.status ?? null);
     setRequisitionLines(result.requisition?.lines ?? []);
     setPhase(nextPhase);
-    if (result.status === "ready") setInventory(result.inventory);
+    if (result.status === "ready") {
+      void inventoryController.updateStockLevels(result.inventory);
+    }
     setActivity((items) => [
       result.status === "blocked"
         ? `Requisición RQ-024 creada por ${result.requisition?.lines.length ?? 0} faltante.`
@@ -158,7 +163,7 @@ export function OperationsDashboard() {
       requisitionLines.map((line) => ({ itemId: line.itemId, quantity: line.shortage })),
       requisitionLines,
     );
-    setInventory(reception.inventory);
+    void inventoryController.updateStockLevels(reception.inventory);
     setRequisitionStatus(reception.status);
     setPhase("received");
     setActivity((items) => [
@@ -170,7 +175,7 @@ export function OperationsDashboard() {
   function handleReserve() {
     const result = planTask(planningInput());
     setTask((current) => ({ ...current, status: result.status }));
-    setInventory(result.inventory);
+    void inventoryController.updateStockLevels(result.inventory);
     setPhase(result.status === "ready" ? "ready" : "blocked");
     setActivity((items) => [
       result.status === "ready"
@@ -181,7 +186,7 @@ export function OperationsDashboard() {
   }
 
   function resetDemo() {
-    setInventory(initialInventory);
+    void inventoryController.resetDemoStock(initialInventory);
     setPhase("unplanned");
     setTask(initialTask);
     setRequisitionStatus(null);
@@ -314,7 +319,13 @@ export function OperationsDashboard() {
             task={task}
           />
         )}
-        {section === "inventory" && <InventoryView inventory={inventory} requirements={requirements} />}
+        {section === "inventory" && (
+          <InventoryView
+            controller={inventoryController}
+            projects={projectsController.projects}
+            requirements={requirements}
+          />
+        )}
         {section === "purchases" && (
           <PurchasesView
             lines={requisitionLines}
@@ -672,37 +683,6 @@ function TaskPlanner({
         </form>
       </section>
     </div>
-  );
-}
-
-function InventoryView({ inventory, requirements }: { inventory: InventoryItem[]; requirements: Requirement[] }) {
-  return (
-    <section className="panel section-card">
-      <div className="section-card-head">
-        <div><p className="eyebrow">ALMACÉN CENTRAL</p><h2>Existencias actuales</h2></div>
-        <span className="data-chip">{inventory.length} artículos</span>
-      </div>
-      <div className="inventory-table">
-        <div className="inventory-row inventory-header">
-          <span>Artículo</span><span>Existencia</span><span>Reservado</span><span>Seguridad</span><span>Disponible</span>
-        </div>
-        {inventory.map((item) => {
-          const requirement = requirements.find((line) => line.itemId === item.id);
-          return (
-            <div className="inventory-row" key={item.id}>
-              <span><b>{item.name}</b><small>{item.unit}</small></span>
-              <span>{item.physicalStock.toFixed(2)}</span>
-              <span>{item.reservedStock.toFixed(2)}</span>
-              <span>{item.safetyStock.toFixed(2)}</span>
-              <span>
-                <b>{getAvailableStock(item).toFixed(2)} {item.unit}</b>
-                {requirement && requirement.shortage > 0 && <small className="shortage-text">Faltan {requirement.shortage.toFixed(2)}</small>}
-              </span>
-            </div>
-          );
-        })}
-      </div>
-    </section>
   );
 }
 
