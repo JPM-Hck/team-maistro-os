@@ -64,6 +64,7 @@ export function calculateWorkerPayroll({
   let overtimeAmount = 0;
   let absenceDeductions = 0;
   let tardinessDeductions = 0;
+  let referenceAmount = 0;
   let resolvedRateType: RateType | null = null;
 
   for (const record of records) {
@@ -80,9 +81,14 @@ export function calculateWorkerPayroll({
     if (!rate) throw new Error(`Falta una tarifa vigente para ${record.workDate}.`);
     resolvedRateType = rate.rateType;
     const expectedDay = expectedDailyValue(rate.rateType, rate.amount, rules);
+    const isFixedRate = rate.rateType === "daily" || rate.rateType === "weekly";
 
     if (record.status === "absent") {
-      absenceDeductions += expectedDay;
+      referenceAmount += expectedDay;
+      if (isFixedRate) {
+        baseAmount += expectedDay;
+        absenceDeductions += expectedDay;
+      }
       continue;
     }
     if (record.status === "leave" || record.status === "rest") continue;
@@ -91,12 +97,22 @@ export function calculateWorkerPayroll({
     const regularMinutes = Math.min(workedMinutes, rules.standardHoursPerDay * 60);
     const overtimeMinutes = Math.max(workedMinutes - rules.standardHoursPerDay * 60, 0);
     const hourlyValue = expectedDay / rules.standardHoursPerDay;
-    baseAmount += (regularMinutes / 60) * hourlyValue;
+    referenceAmount += expectedDay;
+    baseAmount += isFixedRate ? expectedDay : (regularMinutes / 60) * hourlyValue;
     overtimeAmount += (overtimeMinutes / 60) * hourlyValue * rules.overtimeMultiplier;
 
-    if (record.checkIn! > "08:15") {
-      const lateMinutes = Math.max(minutesBetween("08:00", record.checkIn!) - rules.toleranceMinutes, 0);
+    const lateMinutes = record.checkIn! > "08:15"
+      ? Math.max(minutesBetween("08:00", record.checkIn!) - rules.toleranceMinutes, 0)
+      : 0;
+    if (isFixedRate && lateMinutes > 0) {
       tardinessDeductions += (lateMinutes / 60) * hourlyValue;
+    }
+    if (isFixedRate && record.status === "partial") {
+      const missingMinutes = Math.max(
+        rules.standardHoursPerDay * 60 - regularMinutes - lateMinutes,
+        0,
+      );
+      absenceDeductions += (missingMinutes / 60) * hourlyValue;
     }
   }
 
@@ -104,6 +120,9 @@ export function calculateWorkerPayroll({
   const netAmount = round2(
     baseAmount + overtimeAmount + bonuses - absenceDeductions - tardinessDeductions + otherAdjustments,
   );
+  if (referenceAmount > 0 && netAmount > referenceAmount * rules.unusuallyHighMultiplier) {
+    throw new Error("La nómina es inusualmente alta y requiere revisión.");
+  }
   if (netAmount < 0) throw new Error("La nómina no puede resultar negativa.");
 
   return {
@@ -120,6 +139,7 @@ export function calculateWorkerPayroll({
       approvedRecords: records.length,
       standardHoursPerDay: rules.standardHoursPerDay,
       overtimeMultiplier: rules.overtimeMultiplier,
+      referenceAmount: round2(referenceAmount),
     },
   };
 }

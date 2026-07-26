@@ -115,4 +115,69 @@ describe("weekly payroll", () => {
       rates,
     })).toThrow("aprobada");
   });
+
+  it("deducts an absence from a fixed daily rate without making payroll negative", () => {
+    const rates: WorkerRate[] = [{
+      id: "rate-1",
+      workerId: "worker-1",
+      rateType: "daily",
+      amount: 600,
+      effectiveFrom: "2026-01-01",
+      effectiveTo: null,
+    }];
+    const result = calculateWorkerPayroll({
+      workerId: "worker-1",
+      attendance: [{
+        ...baseAttendance[0],
+        status: "absent",
+        checkIn: null,
+        checkOut: null,
+      }],
+      rates,
+    });
+    expect(result.baseAmount).toBe(600);
+    expect(result.absenceDeductions).toBe(600);
+    expect(result.netAmount).toBe(0);
+  });
+
+  it("does not double-discount an hourly worker for an absence", () => {
+    const rates: WorkerRate[] = [{
+      id: "rate-1",
+      workerId: "worker-1",
+      rateType: "hourly",
+      amount: 100,
+      effectiveFrom: "2026-01-01",
+      effectiveTo: null,
+    }];
+    const result = calculateWorkerPayroll({
+      workerId: "worker-1",
+      attendance: [{
+        ...baseAttendance[0],
+        status: "absent",
+        checkIn: null,
+        checkOut: null,
+      }],
+      rates,
+    });
+    expect(result.baseAmount).toBe(0);
+    expect(result.absenceDeductions).toBe(0);
+    expect(result.netAmount).toBe(0);
+  });
+
+  it("blocks an unusually high payroll", () => {
+    const rates: WorkerRate[] = [{
+      id: "rate-1",
+      workerId: "worker-1",
+      rateType: "daily",
+      amount: 600,
+      effectiveFrom: "2026-01-01",
+      effectiveTo: null,
+    }];
+    expect(() => calculateWorkerPayroll({
+      workerId: "worker-1",
+      attendance: baseAttendance,
+      rates,
+      bonuses: 700,
+    })).toThrow("inusualmente alta");
+  });
 });
