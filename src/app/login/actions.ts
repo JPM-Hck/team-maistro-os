@@ -37,3 +37,11 @@ export async function login(
 
   redirect("/");
 }
+
+export async function logout() {
+  if (hasSupabaseEnv()) {
+    const supabase = await createClient();
+    await supabase.auth.signOut();
+  }
+  redirect("/login");
+}

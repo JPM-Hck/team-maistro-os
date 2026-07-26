@@ -2,7 +2,7 @@
 
 Sistema web para conectar tareas, inventario, compras y recursos de una empresa de remodelaciones.
 
-## Checkpoint implementado
+## Checkpoints implementados
 
 La primera entrega demuestra el flujo completo de planeación de una tarea:
 
@@ -14,8 +14,19 @@ La primera entrega demuestra el flujo completo de planeación de una tarea:
 6. Revalida el inventario dentro de una operación transaccional.
 7. Reserva materiales y cambia la tarea a `ready`.
 
-La interfaz funciona en modo demostración sin credenciales. La migración de Supabase implementa el mismo flujo
-para datos persistentes y evita reservas dobles con bloqueo de filas e idempotencia.
+La migración de Supabase implementa el mismo flujo para datos persistentes y evita reservas dobles con bloqueo
+de filas e idempotencia.
+
+La operación persistente agrega:
+
+- CRUD de proyectos con baja lógica.
+- Trabajadores, tarifas históricas y asignaciones sin traslapes.
+- Catálogo de inventario, movimientos auditables y uso por proyecto.
+- Asistencia diaria con aprobación.
+- Nómina semanal con tarifas por hora, día o semana y cierre inmutable.
+
+Cuando Supabase está configurado, el dashboard exige autenticación y no recurre silenciosamente a datos
+temporales. Los trabajadores de nómina son registros operativos independientes de las cuentas que inician sesión.
 
 ## Cálculo demostrable
 
@@ -64,16 +75,19 @@ corepack pnpm test
 corepack pnpm dev
 ```
 
-La página principal abre la demostración. `/login` contiene el acceso preparado para Supabase.
+Sin variables de Supabase, la página principal muestra una guía de configuración. Con Supabase conectado,
+`/login` autentica al usuario y el dashboard carga información real protegida por RLS.
 
 ## Conectar Supabase
 
-1. Crear un proyecto en Supabase.
+1. Crear un proyecto vacío en Supabase.
 2. Copiar `.env.example` a `.env.local`.
 3. Agregar la URL y publishable key.
-4. Ejecutar la migración de `supabase/migrations`.
+4. Ejecutar, en orden, todas las migraciones de `supabase/migrations`.
 5. Cargar `supabase/seed.sql` en un entorno de desarrollo.
-6. Crear usuarios y asignar su rol en `profiles`.
+6. Crear el primer usuario en Supabase Auth.
+7. Insertar su `id` en `profiles` con rol `administrator`.
+8. Copiar las dos variables públicas al entorno de Vercel y volver a desplegar.
 
 Variables:
 
@@ -93,6 +107,9 @@ La service role nunca debe exponerse al navegador ni subirse al repositorio.
 
 RLS valida permisos en la base; ocultar un botón no se considera autorización.
 
+Los salarios y la nómina viven en tablas separadas del trabajador. Solo `administrator` puede consultarlos.
+Supervisión gestiona proyectos, asignaciones y asistencias; almacén registra movimientos sin acceder a salarios.
+
 ## Pruebas cubiertas
 
 - Cantidad cero.
@@ -103,6 +120,12 @@ RLS valida permisos en la base; ocultar un botón no se considera autorización.
 - Idempotencia para impedir reservas dobles.
 - Herramienta crítica no disponible.
 - Dependencia circular.
+- Fechas de proyecto y asignación inválidas.
+- Traslapes de asignaciones y tarifas.
+- Salidas que comprometen reservas o stock de seguridad.
+- Asistencia incompleta o no aprobada.
+- Cambio de tarifa dentro de una misma semana.
+- Horas extra al doble y nómina no negativa.
 
 ## Uso responsable de IA
 
@@ -116,8 +139,7 @@ La IA ayudó a estructurar la interfaz y los casos de prueba. La propuesta se co
 
 ## Siguientes checkpoints
 
-1. Conectar el dashboard a un proyecto real de Supabase.
+1. Conectar y validar el proyecto real de Supabase.
 2. Completar herramientas, asignaciones y cronograma topológico.
-3. Implementar asistencia y nómina configurable.
-4. Cerrar tareas con calidad, costos y productividad.
-5. Ejecutar QA final y desplegar en Vercel.
+3. Cerrar tareas con calidad, costos y productividad.
+4. Ejecutar QA académico final.

@@ -44,3 +44,56 @@ insert into public.tasks (
   '2026-07-30',
   '20000000-0000-0000-0000-000000000001'
 );
+
+insert into public.worker_rates (
+  id, worker_id, rate_type, amount, effective_from
+) values (
+  '21000000-0000-0000-0000-000000000001',
+  '20000000-0000-0000-0000-000000000001',
+  'daily',
+  650,
+  '2026-07-01'
+);
+
+insert into public.project_assignments (
+  id, worker_id, project_id, role, starts_on, ends_on, schedule
+) values (
+  '22000000-0000-0000-0000-000000000001',
+  '20000000-0000-0000-0000-000000000001',
+  '10000000-0000-0000-0000-000000000001',
+  'Colocador de mármol',
+  '2026-07-01',
+  '2026-09-18',
+  '08:00-17:00'
+);
+
+insert into public.inventory_movements (
+  inventory_item_id, movement_type, direction, quantity, reason
+) values
+  ('30000000-0000-0000-0000-000000000001', 'receipt', 'in', 18, 'Existencia inicial de demostración'),
+  ('30000000-0000-0000-0000-000000000002', 'receipt', 'in', 9, 'Existencia inicial de demostración'),
+  ('30000000-0000-0000-0000-000000000003', 'receipt', 'in', 3, 'Existencia inicial de demostración');
+
+insert into public.attendance_records (
+  id, worker_id, project_id, work_date, check_in, check_out,
+  status, approval_status, notes
+) values (
+  '60000000-0000-0000-0000-000000000001',
+  '20000000-0000-0000-0000-000000000001',
+  '10000000-0000-0000-0000-000000000001',
+  '2026-07-27',
+  '08:00',
+  '16:00',
+  'present',
+  'approved',
+  'Registro de demostración'
+);
+
+insert into public.payroll_periods (
+  id, week_start, week_end, status
+) values (
+  '70000000-0000-0000-0000-000000000001',
+  '2026-07-27',
+  '2026-08-02',
+  'open'
+);
