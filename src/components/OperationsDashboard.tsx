@@ -5,6 +5,8 @@ import { EquipmentView } from "@/components/equipment/EquipmentView";
 import { useEquipment } from "@/components/equipment/useEquipment";
 import { InventoryView } from "@/components/inventory/InventoryView";
 import { useInventory } from "@/components/inventory/useInventory";
+import { PayrollView } from "@/components/payroll/PayrollView";
+import { usePayroll } from "@/components/payroll/usePayroll";
 import { ProjectsView } from "@/components/projects/ProjectsView";
 import { useProjects } from "@/components/projects/useProjects";
 import { demoTools, initialInventory, marbleRecipe } from "@/domain/demo-data";
@@ -97,6 +99,7 @@ export function OperationsDashboard() {
   const projectsController = useProjects();
   const inventoryController = useInventory();
   const equipmentController = useEquipment();
+  const payrollController = usePayroll();
   const inventory = inventoryController.activeItems;
   const activeProject = projectsController.activeProject;
   const activeProjectName = activeProject?.name ?? "Casa Lomas";
@@ -361,7 +364,12 @@ export function OperationsDashboard() {
             projects={projectsController.projects}
           />
         )}
-        {section === "payroll" && <PayrollView />}
+        {section === "payroll" && (
+          <PayrollView
+            controller={payrollController}
+            projects={projectsController.projects}
+          />
+        )}
       </main>
 
       {plannerOpen && (
@@ -745,23 +753,6 @@ function PurchasesView({
       ) : (
         <EmptyState title="No hay requisiciones abiertas" detail="Al planear una tarea con faltantes aparecerá aquí automáticamente." />
       )}
-    </section>
-  );
-}
-
-function PayrollView() {
-  return (
-    <section className="metrics payroll-metrics">
-      <MetricCard label="Personal activo" value="12" trend="Casa Lomas" tone="ink" />
-      <MetricCard label="Asistencia semanal" value="94%" trend="2 incidencias pendientes" tone="green" />
-      <MetricCard label="Horas registradas" value="428" trend="Semana 30" tone="blue" />
-      <MetricCard label="Nómina estimada" value="$86.4k" trend="Cierre pendiente" tone="orange" />
-      <article className="panel section-card payroll-placeholder">
-        <EmptyState
-          title="Nómina preparada para el checkpoint 02"
-          detail="La siguiente etapa conectará asistencia, incidencias aprobadas y cálculo semanal configurable."
-        />
-      </article>
     </section>
   );
 }
