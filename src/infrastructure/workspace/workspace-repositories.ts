@@ -1,17 +1,17 @@
 import { LocalStorageEquipmentRepository } from "../equipment/local-storage-equipment-repository";
 import { LocalStorageInventoryRepository } from "../inventory/local-storage-inventory-repository";
-import { LocalStoragePayrollRepository } from "../payroll/local-storage-payroll-repository";
-import { LocalStorageProjectRepository } from "../projects/local-storage-project-repository";
 import { getBrowserWorkspaceStorage } from "./workspace-storage";
+import { WorkspacePayrollRepository } from "./workspace-payroll-repository";
+import { WorkspaceProjectRepository } from "./workspace-project-repository";
 
 export function createWorkspaceRepositories() {
   const storage = getBrowserWorkspaceStorage();
   return {
     storage,
-    projects: new LocalStorageProjectRepository({ storage }),
+    projects: new WorkspaceProjectRepository(storage),
     inventory: new LocalStorageInventoryRepository({ storage }),
     equipment: new LocalStorageEquipmentRepository({ storage }),
-    payroll: new LocalStoragePayrollRepository({ storage }),
+    payroll: new WorkspacePayrollRepository(storage),
   };
 }
 

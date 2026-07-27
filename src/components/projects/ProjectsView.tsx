@@ -6,6 +6,7 @@ import type {
   ProjectInput,
   ProjectStatus,
 } from "@/domain/projects/types";
+import type { Employee } from "@/domain/workspace/types";
 import { ProjectArchiveDialog } from "./ProjectArchiveDialog";
 import { ProjectCard } from "./ProjectCard";
 import { ProjectDetail } from "./ProjectDetail";
@@ -37,8 +38,10 @@ function filterLabel(filter: ProjectFilter) {
 
 export function ProjectsView({
   controller,
+  employees,
 }: {
   controller: ProjectsController;
+  employees: Employee[];
 }) {
   const [filter, setFilter] = useState<ProjectFilter>("all");
   const [query, setQuery] = useState("");
@@ -238,6 +241,7 @@ export function ProjectsView({
                 onSave={saveProject}
                 project={null}
                 projects={controller.projects}
+                employees={employees}
                 saving={controller.saving}
               />
             )}
@@ -247,6 +251,7 @@ export function ProjectsView({
                 onSave={saveProject}
                 project={dialog.project}
                 projects={controller.projects}
+                employees={employees}
                 saving={controller.saving}
               />
             )}

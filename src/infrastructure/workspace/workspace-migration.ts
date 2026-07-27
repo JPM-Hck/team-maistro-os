@@ -234,10 +234,10 @@ export function normalizeWorkspace(
     return {
       ...project,
       responsible:
-        project.responsible ??
         employees.find(
           (employee) => employee.id === responsibleEmployeeId,
         )?.fullName ??
+        project.responsible ??
         "",
       responsibleEmployeeId,
       progress: project.progress ?? legacyProject.legacyProgress ?? 0,

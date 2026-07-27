@@ -238,6 +238,7 @@ function mergeProjects(
   return next.map((project) => ({
     ...project,
     responsibleEmployeeId:
+      project.responsibleEmployeeId ??
       currentById.get(project.id)?.responsibleEmployeeId ?? null,
   }));
 }
@@ -332,8 +333,10 @@ function applyPayrollWorkers(
         scheduledDays: worker.scheduledDays,
         absenceDays: worker.absenceDays,
         overtimeHours: current?.overtimeHours ?? 0,
-        salaryTypeSnapshot: worker.salaryType,
-        salaryAmountSnapshot: worker.salaryAmount,
+        salaryTypeSnapshot:
+          current?.salaryTypeSnapshot ?? worker.salaryType,
+        salaryAmountSnapshot:
+          current?.salaryAmountSnapshot ?? worker.salaryAmount,
         overtimeRateSnapshot: current?.overtimeRateSnapshot ?? 0,
         notes: worker.notes,
         createdAt: current?.createdAt ?? worker.createdAt,

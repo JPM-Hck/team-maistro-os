@@ -74,6 +74,21 @@ workspace, por lo que permanece al recargar. Los cambios se notifican a los
 demás módulos de la misma pestaña y mediante el evento `storage` entre
 pestañas.
 
+### Personas, proyectos y proyecto activo
+
+Proyectos y Nómina comparten un solo directorio de empleados dentro del
+workspace. Las relaciones se guardan mediante IDs:
+
+- el responsable de un proyecto se selecciona entre empleados activos;
+- renombrar una persona actualiza su nombre en los módulos relacionados;
+- archivar una persona conserva sus relaciones históricas, pero impide nuevas
+  asignaciones;
+- el tipo y monto salarial actual permanecen en el empleado, mientras las
+  entradas de nómina conservan sus snapshots originales;
+- `activeProjectId` se comparte y persiste entre recargas y pestañas;
+- al archivar el proyecto activo se selecciona otro proyecto disponible o se
+  muestra un estado vacío.
+
 ## Ejecutar localmente
 
 Requisitos: Node.js 20.9 o superior y pnpm mediante Corepack.

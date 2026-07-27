@@ -13,6 +13,7 @@ import {
   type DemoTask,
   useWorkspaceDemo,
 } from "@/components/workspace/useWorkspaceDemo";
+import { useWorkspaceSnapshot } from "@/components/workspace/useWorkspaceSnapshot";
 import { demoTools, initialInventory, marbleRecipe } from "@/domain/demo-data";
 import type { Project } from "@/domain/projects/types";
 import { createWorkspaceRepositories } from "@/infrastructure/workspace/workspace-repositories";
@@ -76,6 +77,7 @@ export function OperationsDashboard() {
   const equipmentController = useEquipment(repositories.equipment);
   const payrollController = usePayroll(repositories.payroll);
   const workspaceDemo = useWorkspaceDemo(repositories.storage);
+  const workspace = useWorkspaceSnapshot(repositories.storage);
   const {
     activity,
     phase,
@@ -85,7 +87,7 @@ export function OperationsDashboard() {
   } = workspaceDemo;
   const inventory = inventoryController.activeItems;
   const activeProject = projectsController.activeProject;
-  const activeProjectName = activeProject?.name ?? "Casa Lomas";
+  const activeProjectName = activeProject?.name ?? "Sin proyecto activo";
   const planningTools = useMemo(
     () =>
       equipmentController.loading
@@ -238,8 +240,8 @@ export function OperationsDashboard() {
         </nav>
 
         <div className="sidebar-card">
-          <span>INTEGRACIÓN 01</span>
-          <strong>Fuente única</strong>
+          <span>INTEGRACIÓN 02</span>
+          <strong>Personas + proyectos</strong>
           <div className="progress-track"><i /></div>
           <small>
             {workspaceDemo.migrationReport.projectsMigrated} proyectos ·{" "}
@@ -316,7 +318,10 @@ export function OperationsDashboard() {
           />
         )}
         {section === "projects" && (
-          <ProjectsView controller={projectsController} />
+          <ProjectsView
+            controller={projectsController}
+            employees={workspace.employees}
+          />
         )}
         {section === "equipment" && (
           <EquipmentView
@@ -389,8 +394,8 @@ function SummaryView({
       <section className="metrics" aria-label="Indicadores principales">
         <MetricCard
           label="Avance del proyecto"
-          value={`${activeProject?.progress ?? 38}%`}
-          trend={activeProject?.name ?? "Casa Lomas"}
+          value={`${activeProject?.progress ?? 0}%`}
+          trend={activeProject?.name ?? "Sin proyecto activo"}
           tone="ink"
         />
         <MetricCard
@@ -743,20 +748,36 @@ function RequirementsTable({ requirements, compact = false }: { requirements: Re
 }
 
 function ActiveProjectCard({ project }: { project: Project | null }) {
-  const name = project?.name ?? "Casa Lomas";
-  const projectType = project?.projectType ?? "Remodelación integral";
-  const location = project?.location ?? "CDMX";
-  const progress = project?.progress ?? 38;
-  const budget = project?.budget ?? 2_500_000;
-  const responsible = project?.responsible ?? "Alejandro S.";
-  const targetDate = project?.targetDate
+  if (!project) {
+    return (
+      <article className="panel project-card">
+        <div className="panel-head compact">
+          <div>
+            <p className="eyebrow">PROYECTO ACTIVO</p>
+            <h2>Sin proyecto activo</h2>
+          </div>
+        </div>
+        <p className="muted">
+          Crea o activa un proyecto para mostrar su información aquí.
+        </p>
+      </article>
+    );
+  }
+
+  const name = project.name;
+  const projectType = project.projectType;
+  const location = project.location;
+  const progress = project.progress;
+  const budget = project.budget;
+  const responsible = project.responsible;
+  const targetDate = project.targetDate
     ? new Intl.DateTimeFormat("es-MX", {
         day: "numeric",
         month: "short",
         year: "numeric",
         timeZone: "UTC",
       }).format(new Date(`${project.targetDate}T00:00:00Z`))
-    : "18 sep 2026";
+    : "Sin fecha";
 
   return (
     <article className="panel project-card">

@@ -8,6 +8,8 @@ import {
   type ProjectStatus,
   toProjectInput,
 } from "@/domain/projects/types";
+import { getResponsibleAssignmentError } from "@/domain/workspace/employee-assignment";
+import type { Employee } from "@/domain/workspace/types";
 import { PROJECT_STATUS_LABELS } from "./ProjectStatusBadge";
 
 const editableStatuses: ProjectStatus[] = [
@@ -32,6 +34,7 @@ function emptyProject(): ProjectInput {
     clientName: "",
     location: "",
     responsible: "",
+    responsibleEmployeeId: null,
     startDate: currentDate,
     targetDate: currentDate,
     budget: 0,
@@ -44,12 +47,14 @@ function emptyProject(): ProjectInput {
 export function ProjectForm({
   project,
   projects,
+  employees,
   saving,
   onCancel,
   onSave,
 }: {
   project: Project | null;
   projects: Project[];
+  employees: Employee[];
   saving: boolean;
   onCancel: () => void;
   onSave: (input: ProjectInput) => Promise<boolean>;
@@ -57,10 +62,18 @@ export function ProjectForm({
   const [input, setInput] = useState<ProjectInput>(() =>
     project ? toProjectInput(project) : emptyProject(),
   );
-  const errors = useMemo(
-    () => validateProject(input, projects, project?.id),
-    [input, project?.id, projects],
-  );
+  const errors = useMemo(() => {
+    const validation = validateProject(input, projects, project?.id);
+    const responsibleError = getResponsibleAssignmentError(
+      input,
+      employees,
+      project?.responsibleEmployeeId ?? null,
+    );
+    if (responsibleError) {
+      validation.responsibleEmployeeId = responsibleError;
+    }
+    return validation;
+  }, [employees, input, project?.id, project?.responsibleEmployeeId, projects]);
   const invalid = Object.keys(errors).length > 0;
 
   function set<K extends keyof ProjectInput>(
@@ -115,11 +128,39 @@ export function ProjectForm({
             value={input.location}
           />
         </ProjectField>
-        <ProjectField error={errors.responsible} label="Responsable">
-          <input
-            onChange={(event) => set("responsible", event.target.value)}
-            value={input.responsible}
-          />
+        <ProjectField
+          error={errors.responsibleEmployeeId ?? errors.responsible}
+          label="Responsable"
+        >
+          <select
+            onChange={(event) => {
+              const employee = employees.find(
+                (candidate) => candidate.id === event.target.value,
+              );
+              setInput((current) => ({
+                ...current,
+                responsibleEmployeeId: employee?.id ?? null,
+                responsible: employee?.fullName ?? "",
+              }));
+            }}
+            value={input.responsibleEmployeeId ?? ""}
+          >
+            <option value="">Selecciona una persona</option>
+            {employees
+              .filter(
+                (employee) =>
+                  employee.employmentStatus === "active" ||
+                  employee.id === project?.responsibleEmployeeId,
+              )
+              .map((employee) => (
+                <option key={employee.id} value={employee.id}>
+                  {employee.employeeCode} · {employee.fullName}
+                  {employee.employmentStatus === "archived"
+                    ? " (archivada)"
+                    : ""}
+                </option>
+              ))}
+          </select>
         </ProjectField>
         <ProjectField error={errors.status} label="Estado">
           <select

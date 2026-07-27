@@ -18,6 +18,7 @@ export interface Project {
   clientName: string;
   location: string;
   responsible: string;
+  responsibleEmployeeId?: string | null;
   startDate: string;
   targetDate: string;
   budget: number;
@@ -42,6 +43,7 @@ export const CASA_LOMAS_PROJECT: Project = {
   clientName: "Casa Lomas",
   location: "CDMX",
   responsible: "Alejandro S.",
+  responsibleEmployeeId: "worker-alejandro",
   startDate: "2026-07-01",
   targetDate: "2026-09-18",
   budget: 2_500_000,
@@ -61,6 +63,7 @@ export function toProjectInput(project: Project): ProjectInput {
     clientName: project.clientName,
     location: project.location,
     responsible: project.responsible,
+    responsibleEmployeeId: project.responsibleEmployeeId ?? null,
     startDate: project.startDate,
     targetDate: project.targetDate,
     budget: project.budget,
