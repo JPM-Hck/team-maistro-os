@@ -1,6 +1,8 @@
 "use client";
 
 import { FormEvent, useMemo, useState } from "react";
+import { EquipmentView } from "@/components/equipment/EquipmentView";
+import { useEquipment } from "@/components/equipment/useEquipment";
 import { InventoryView } from "@/components/inventory/InventoryView";
 import { useInventory } from "@/components/inventory/useInventory";
 import { ProjectsView } from "@/components/projects/ProjectsView";
@@ -94,9 +96,25 @@ export function OperationsDashboard() {
   ]);
   const projectsController = useProjects();
   const inventoryController = useInventory();
+  const equipmentController = useEquipment();
   const inventory = inventoryController.activeItems;
   const activeProject = projectsController.activeProject;
   const activeProjectName = activeProject?.name ?? "Casa Lomas";
+  const planningTools = useMemo(
+    () =>
+      equipmentController.loading
+        ? demoTools
+        : demoTools.map((requirement) => {
+            const equipment = equipmentController.activeItems.find(
+              (item) => item.name === requirement.toolType,
+            );
+            return {
+              ...requirement,
+              available: equipment?.status === "available",
+            };
+          }),
+    [equipmentController.activeItems, equipmentController.loading],
+  );
 
   const calculatedRequirements = useMemo(
     () => calculateRequirements(task.quantity, marbleRecipe, inventory),
@@ -126,7 +144,7 @@ export function OperationsDashboard() {
       recipeLines: marbleRecipe,
       inventory: currentInventory,
       predecessorsComplete: true,
-      tools: demoTools,
+      tools: planningTools,
       workerHasConflict: false,
       idempotencyKey: `plan-${currentTask.id}-v1`,
     };
@@ -337,7 +355,12 @@ export function OperationsDashboard() {
         {section === "projects" && (
           <ProjectsView controller={projectsController} />
         )}
-        {section === "equipment" && <EquipmentView />}
+        {section === "equipment" && (
+          <EquipmentView
+            controller={equipmentController}
+            projects={projectsController.projects}
+          />
+        )}
         {section === "payroll" && <PayrollView />}
       </main>
 
@@ -722,31 +745,6 @@ function PurchasesView({
       ) : (
         <EmptyState title="No hay requisiciones abiertas" detail="Al planear una tarea con faltantes aparecerá aquí automáticamente." />
       )}
-    </section>
-  );
-}
-
-function EquipmentView() {
-  const equipment = [
-    ["Cortadora de piso", "CT-014", "Disponible", "green"],
-    ["Nivel láser", "NL-008", "Disponible", "green"],
-    ["Rotomartillo", "RT-021", "Mantenimiento", "orange"],
-  ];
-  return (
-    <section className="panel section-card">
-      <div className="section-card-head">
-        <div><p className="eyebrow">CONTROL DE ACTIVOS</p><h2>Equipo registrado</h2></div>
-        <span className="data-chip">2 disponibles</span>
-      </div>
-      <div className="equipment-grid">
-        {equipment.map(([name, code, status, tone]) => (
-          <article className="equipment-item" key={code}>
-            <span className="equipment-icon">◇</span>
-            <div><b>{name}</b><small>{code}</small></div>
-            <span className={`availability ${tone === "green" ? "enough" : "missing"}`}>{status}</span>
-          </article>
-        ))}
-      </div>
     </section>
   );
 }
