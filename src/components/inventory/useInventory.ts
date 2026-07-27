@@ -50,19 +50,24 @@ export function useInventory(
 
   useEffect(() => {
     let active = true;
-    repository
-      .getAll()
-      .then((saved) => {
-        if (active) setItems(saved);
-      })
-      .catch((caught) => {
-        if (active) setError(errorMessage(caught));
-      })
-      .finally(() => {
-        if (active) setLoading(false);
-      });
+    function load() {
+      repository
+        .getAll()
+        .then((saved) => {
+          if (active) setItems(saved);
+        })
+        .catch((caught) => {
+          if (active) setError(errorMessage(caught));
+        })
+        .finally(() => {
+          if (active) setLoading(false);
+        });
+    }
+    load();
+    const unsubscribe = repository.subscribe?.(load);
     return () => {
       active = false;
+      unsubscribe?.();
     };
   }, [repository]);
 

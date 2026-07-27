@@ -24,6 +24,7 @@
 .DS_Store
 *.pem
 .start-check*.log
+.dev-server*.log
 
 # debug
 npm-debug.log*

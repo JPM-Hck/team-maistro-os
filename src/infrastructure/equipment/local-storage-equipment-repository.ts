@@ -12,7 +12,9 @@ import {
 import type { EquipmentRepository } from "./equipment-repository";
 
 export const EQUIPMENT_STORAGE_KEY = "team-maistro-os.equipment.v1";
-export type EquipmentStorage = Pick<Storage, "getItem" | "setItem">;
+export type EquipmentStorage = Pick<Storage, "getItem" | "setItem"> & {
+  subscribe?(listener: () => void): () => void;
+};
 
 export interface LocalEquipmentRepositoryOptions {
   storage?: EquipmentStorage;
@@ -111,6 +113,10 @@ export class LocalStorageEquipmentRepository
       );
     }
     return this.update(id, { status: "archived" });
+  }
+
+  subscribe(listener: () => void) {
+    return this.storage().subscribe?.(listener) ?? (() => undefined);
   }
 
   private storage(): EquipmentStorage {

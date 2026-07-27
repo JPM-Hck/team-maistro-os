@@ -18,7 +18,9 @@ export const ACTIVE_PROJECT_STORAGE_KEY =
 export type ProjectStorage = Pick<
   Storage,
   "getItem" | "setItem" | "removeItem"
->;
+> & {
+  subscribe?(listener: () => void): () => void;
+};
 
 export interface LocalProjectRepositoryOptions {
   storage?: ProjectStorage;
@@ -150,6 +152,10 @@ export class LocalStorageProjectRepository implements ProjectRepository {
       throw new Error("Un proyecto archivado no puede ser el proyecto activo.");
     }
     this.storage().setItem(ACTIVE_PROJECT_STORAGE_KEY, id);
+  }
+
+  subscribe(listener: () => void) {
+    return this.storage().subscribe?.(listener) ?? (() => undefined);
   }
 
   private storage(): ProjectStorage {

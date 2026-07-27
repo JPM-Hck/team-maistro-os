@@ -9,8 +9,13 @@ import { PayrollView } from "@/components/payroll/PayrollView";
 import { usePayroll } from "@/components/payroll/usePayroll";
 import { ProjectsView } from "@/components/projects/ProjectsView";
 import { useProjects } from "@/components/projects/useProjects";
+import {
+  type DemoTask,
+  useWorkspaceDemo,
+} from "@/components/workspace/useWorkspaceDemo";
 import { demoTools, initialInventory, marbleRecipe } from "@/domain/demo-data";
 import type { Project } from "@/domain/projects/types";
+import { createWorkspaceRepositories } from "@/infrastructure/workspace/workspace-repositories";
 import {
   calculateRequirements,
   getAvailableStock,
@@ -32,17 +37,7 @@ type SectionId =
   | "equipment"
   | "payroll";
 
-type PlannedTask = {
-  id: string;
-  name: string;
-  project: string;
-  quantity: number;
-  unit: string;
-  responsible: string;
-  startDate: string;
-  endDate: string;
-  status: TaskStatus;
-};
+type PlannedTask = DemoTask;
 
 const navItems: Array<{ id: SectionId; label: string; icon: string }> = [
   { id: "summary", label: "Resumen", icon: "⌂" },
@@ -72,34 +67,22 @@ const eventCopy: Record<DemoPhase, string> = {
   ready: "Materiales reservados. La tarea puede iniciar sin comprometer el stock de seguridad.",
 };
 
-const initialTask: PlannedTask = {
-  id: "task-marble-floor",
-  name: "Colocación de mármol",
-  project: "Casa Lomas",
-  quantity: 20,
-  unit: "m²",
-  responsible: "Rubén",
-  startDate: "2026-07-28",
-  endDate: "2026-07-30",
-  status: "draft",
-};
-
 export function OperationsDashboard() {
   const [section, setSection] = useState<SectionId>("summary");
   const [plannerOpen, setPlannerOpen] = useState(false);
-  const [phase, setPhase] = useState<DemoPhase>("unplanned");
-  const [task, setTask] = useState<PlannedTask>(initialTask);
-  const [requisitionStatus, setRequisitionStatus] = useState<RequisitionStatus | null>(null);
-  const [requisitionLines, setRequisitionLines] = useState<
-    Array<Pick<Requirement, "itemId" | "itemName" | "unit" | "shortage">>
-  >([]);
-  const [activity, setActivity] = useState<string[]>([
-    "Proyecto Casa Lomas cargado con receta aprobada.",
-  ]);
-  const projectsController = useProjects();
-  const inventoryController = useInventory();
-  const equipmentController = useEquipment();
-  const payrollController = usePayroll();
+  const repositories = useMemo(() => createWorkspaceRepositories(), []);
+  const projectsController = useProjects(repositories.projects);
+  const inventoryController = useInventory(repositories.inventory);
+  const equipmentController = useEquipment(repositories.equipment);
+  const payrollController = usePayroll(repositories.payroll);
+  const workspaceDemo = useWorkspaceDemo(repositories.storage);
+  const {
+    activity,
+    phase,
+    requisitionLines,
+    requisitionStatus,
+    task,
+  } = workspaceDemo;
   const inventory = inventoryController.activeItems;
   const activeProject = projectsController.activeProject;
   const activeProjectName = activeProject?.name ?? "Casa Lomas";
@@ -155,20 +138,10 @@ export function OperationsDashboard() {
 
   function applyPlanning(currentTask: PlannedTask) {
     const result = planTask(planningInput(inventory, currentTask));
-    const nextPhase = result.status === "blocked" ? "blocked" : "ready";
-    setTask({ ...currentTask, status: result.status });
-    setRequisitionStatus(result.requisition?.status ?? null);
-    setRequisitionLines(result.requisition?.lines ?? []);
-    setPhase(nextPhase);
+    workspaceDemo.applyPlanning(currentTask, result);
     if (result.status === "ready") {
       void inventoryController.updateStockLevels(result.inventory);
     }
-    setActivity((items) => [
-      result.status === "blocked"
-        ? `Requisición RQ-024 creada por ${result.requisition?.lines.length ?? 0} faltante.`
-        : `Tarea “${currentTask.name}” planeada y reservada.`,
-      ...items,
-    ]);
   }
 
   function handlePlannerSubmit(nextTask: PlannedTask) {
@@ -185,34 +158,18 @@ export function OperationsDashboard() {
       requisitionLines,
     );
     void inventoryController.updateStockLevels(reception.inventory);
-    setRequisitionStatus(reception.status);
-    setPhase("received");
-    setActivity((items) => [
-      "Compra RQ-024 recibida y movimiento de entrada registrado.",
-      ...items,
-    ]);
+    workspaceDemo.markReceived(reception.status);
   }
 
   function handleReserve() {
     const result = planTask(planningInput());
-    setTask((current) => ({ ...current, status: result.status }));
     void inventoryController.updateStockLevels(result.inventory);
-    setPhase(result.status === "ready" ? "ready" : "blocked");
-    setActivity((items) => [
-      result.status === "ready"
-        ? "Reserva confirmada. Tarea actualizada a Lista."
-        : "La verificación encontró un bloqueo pendiente.",
-      ...items,
-    ]);
+    workspaceDemo.markReserved(result);
   }
 
   function resetDemo() {
     void inventoryController.resetDemoStock(initialInventory);
-    setPhase("unplanned");
-    setTask(initialTask);
-    setRequisitionStatus(null);
-    setRequisitionLines([]);
-    setActivity(["Proyecto Casa Lomas cargado con receta aprobada."]);
+    workspaceDemo.reset();
   }
 
   const pageCopy: Record<SectionId, { eyebrow: string; title: string; subtitle: string }> = {
@@ -281,10 +238,13 @@ export function OperationsDashboard() {
         </nav>
 
         <div className="sidebar-card">
-          <span>CHECKPOINT 01</span>
-          <strong>Tareas + inventario</strong>
+          <span>INTEGRACIÓN 01</span>
+          <strong>Fuente única</strong>
           <div className="progress-track"><i /></div>
-          <small>Navegación y planeación activas</small>
+          <small>
+            {workspaceDemo.migrationReport.projectsMigrated} proyectos ·{" "}
+            {workspaceDemo.migrationReport.pendingReview.length} por revisar
+          </small>
         </div>
 
         <div className="user-card">

@@ -1,5 +1,5 @@
-import { OperationsDashboard } from "@/components/OperationsDashboard";
+import { OperationsDashboardLoader } from "@/components/OperationsDashboardLoader";
 
 export default function Home() {
-  return <OperationsDashboard />;
+  return <OperationsDashboardLoader />;
 }

@@ -12,7 +12,9 @@ import {
 import type { PayrollRepository } from "./payroll-repository";
 
 export const PAYROLL_STORAGE_KEY = "team-maistro-os.payroll-workers.v1";
-export type PayrollStorage = Pick<Storage, "getItem" | "setItem">;
+export type PayrollStorage = Pick<Storage, "getItem" | "setItem"> & {
+  subscribe?(listener: () => void): () => void;
+};
 
 export interface LocalPayrollRepositoryOptions {
   storage?: PayrollStorage;
@@ -102,6 +104,10 @@ export class LocalStoragePayrollRepository implements PayrollRepository {
 
   async archive(id: string): Promise<PayrollWorker> {
     return this.update(id, { status: "archived" });
+  }
+
+  subscribe(listener: () => void) {
+    return this.storage().subscribe?.(listener) ?? (() => undefined);
   }
 
   private storage(): PayrollStorage {

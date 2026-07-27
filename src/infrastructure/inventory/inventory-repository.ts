@@ -13,4 +13,5 @@ export interface InventoryRepository {
   archive(id: string): Promise<InventoryRecord>;
   updateStockLevels(items: InventoryItem[]): Promise<void>;
   resetDemoStock(items: InventoryItem[]): Promise<void>;
+  subscribe?(listener: () => void): () => void;
 }

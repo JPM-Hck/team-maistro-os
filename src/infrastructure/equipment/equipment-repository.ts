@@ -10,4 +10,5 @@ export interface EquipmentRepository {
   create(input: EquipmentInput): Promise<EquipmentRecord>;
   update(id: string, changes: EquipmentChanges): Promise<EquipmentRecord>;
   archive(id: string): Promise<EquipmentRecord>;
+  subscribe?(listener: () => void): () => void;
 }

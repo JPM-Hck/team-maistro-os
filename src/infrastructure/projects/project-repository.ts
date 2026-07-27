@@ -12,4 +12,5 @@ export interface ProjectRepository {
   archive(id: string): Promise<Project>;
   getActiveProjectId(): Promise<string | null>;
   setActiveProjectId(id: string): Promise<void>;
+  subscribe?(listener: () => void): () => void;
 }

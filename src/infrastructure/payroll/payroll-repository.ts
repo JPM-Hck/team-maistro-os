@@ -13,4 +13,5 @@ export interface PayrollRepository {
     changes: PayrollWorkerChanges,
   ): Promise<PayrollWorker>;
   archive(id: string): Promise<PayrollWorker>;
+  subscribe?(listener: () => void): () => void;
 }

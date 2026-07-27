@@ -54,6 +54,26 @@ supabase             migración, RLS, función transaccional y datos demo
 Las fórmulas no viven en componentes. La función `planTask` puede probarse sin navegador y la operación
 `reserve_task_materials` repite las validaciones en PostgreSQL antes de modificar inventario.
 
+### Workspace local integrado
+
+En modo demostración, todos los módulos leen y escriben mediante el
+workspace versionado `maistro.workspace.v2`. Los repositorios de Proyectos,
+Inventario, Equipo y Nómina conservan sus contratos, pero ya no mantienen
+claves de ejecución independientes.
+
+La primera carga:
+
+1. respalda las claves anteriores en `maistro.workspace.v1.backup`;
+2. migra proyectos, inventario, equipo y nómina sin cambiar salarios;
+3. relaciona nombres que tienen una coincidencia inequívoca;
+4. registra duplicados y referencias ambiguas en el reporte de migración;
+5. conserva las claves anteriores solo como respaldo.
+
+El flujo demostrativo de tareas y requisiciones también forma parte del
+workspace, por lo que permanece al recargar. Los cambios se notifican a los
+demás módulos de la misma pestaña y mediante el evento `storage` entre
+pestañas.
+
 ## Ejecutar localmente
 
 Requisitos: Node.js 20.9 o superior y pnpm mediante Corepack.

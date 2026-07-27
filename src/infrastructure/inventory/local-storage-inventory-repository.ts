@@ -14,7 +14,9 @@ import type { InventoryRepository } from "./inventory-repository";
 
 export const INVENTORY_STORAGE_KEY = "team-maistro-os.inventory.v1";
 
-export type InventoryStorage = Pick<Storage, "getItem" | "setItem">;
+export type InventoryStorage = Pick<Storage, "getItem" | "setItem"> & {
+  subscribe?(listener: () => void): () => void;
+};
 
 export interface LocalInventoryRepositoryOptions {
   storage?: InventoryStorage;
@@ -138,6 +140,10 @@ export class LocalStorageInventoryRepository
 
   async resetDemoStock(items: InventoryItem[]): Promise<void> {
     await this.updateStockLevels(items);
+  }
+
+  subscribe(listener: () => void) {
+    return this.storage().subscribe?.(listener) ?? (() => undefined);
   }
 
   private storage(): InventoryStorage {

@@ -72,8 +72,12 @@ export function useProjects(
     }
 
     void load();
+    const unsubscribe = repository.subscribe?.(() => {
+      void load();
+    });
     return () => {
       active = false;
+      unsubscribe?.();
     };
   }, [repository]);
 
