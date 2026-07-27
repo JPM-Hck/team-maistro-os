@@ -9,6 +9,9 @@ import { PayrollView } from "@/components/payroll/PayrollView";
 import { usePayroll } from "@/components/payroll/usePayroll";
 import { ProjectsView } from "@/components/projects/ProjectsView";
 import { useProjects } from "@/components/projects/useProjects";
+import { TasksView } from "@/components/tasks/TasksView";
+import { useTasks } from "@/components/tasks/useTasks";
+import { TASK_STATUS_LABELS } from "@/domain/tasks/types";
 import {
   type DemoTask,
   useWorkspaceDemo,
@@ -25,7 +28,6 @@ import {
   type InventoryItem,
   type RequisitionStatus,
   type Requirement,
-  type TaskStatus,
 } from "@/domain/operations";
 
 type DemoPhase = "unplanned" | "blocked" | "received" | "ready";
@@ -50,17 +52,6 @@ const navItems: Array<{ id: SectionId; label: string; icon: string }> = [
   { id: "payroll", label: "Nómina", icon: "$" },
 ];
 
-const statusLabels: Record<TaskStatus, string> = {
-  draft: "Borrador",
-  planned: "Planeada",
-  blocked: "Bloqueada",
-  ready: "Lista",
-  in_progress: "En proceso",
-  in_review: "En revisión",
-  completed: "Terminada",
-  cancelled: "Cancelada",
-};
-
 const eventCopy: Record<DemoPhase, string> = {
   unplanned: "Abre el panel para definir cantidad, responsable y fechas.",
   blocked: "Se detectó un faltante y se generó una requisición automáticamente.",
@@ -76,6 +67,7 @@ export function OperationsDashboard() {
   const inventoryController = useInventory(repositories.inventory);
   const equipmentController = useEquipment(repositories.equipment);
   const payrollController = usePayroll(repositories.payroll);
+  const tasksController = useTasks(repositories.tasks);
   const workspaceDemo = useWorkspaceDemo(repositories.storage);
   const workspace = useWorkspaceSnapshot(repositories.storage);
   const {
@@ -240,12 +232,12 @@ export function OperationsDashboard() {
         </nav>
 
         <div className="sidebar-card">
-          <span>INTEGRACIÓN 02</span>
-          <strong>Personas + proyectos</strong>
+          <span>INTEGRACIÓN 03</span>
+          <strong>Tareas + avance</strong>
           <div className="progress-track"><i /></div>
           <small>
-            {workspaceDemo.migrationReport.projectsMigrated} proyectos ·{" "}
-            {workspaceDemo.migrationReport.pendingReview.length} por revisar
+            {workspace.tasks.filter((item) => !item.archived).length} tareas ·{" "}
+            {workspace.tasks.filter((item) => item.needsReview).length} por revisar
           </small>
         </div>
 
@@ -294,12 +286,19 @@ export function OperationsDashboard() {
         )}
         {section === "tasks" && (
           <TasksView
-            onOpenPlanner={() => setPlannerOpen(true)}
-            onReceive={handleReceive}
-            onReserve={handleReserve}
-            phase={phase}
-            requirements={requirements}
-            task={task}
+            activeProjectId={activeProject?.id ?? null}
+            controller={tasksController}
+            demoResources={
+              <DemoTaskResources
+                handleReceive={handleReceive}
+                handleReserve={handleReserve}
+                phase={phase}
+                requirements={requirements}
+              />
+            }
+            demoTaskId={task.id}
+            employees={workspace.employees}
+            projects={workspace.projects}
           />
         )}
         {section === "inventory" && (
@@ -348,7 +347,6 @@ export function OperationsDashboard() {
     </div>
   );
 }
-
 function SummaryView({
   activeProject,
   activity,
@@ -414,7 +412,7 @@ function SummaryView({
       </section>
 
       <section className="workspace-grid">
-        <TaskDetail
+        <SummaryTaskDetail
           handleReceive={handleReceive}
           handleReserve={handleReserve}
           phase={phase}
@@ -432,61 +430,7 @@ function SummaryView({
   );
 }
 
-function TasksView({
-  onOpenPlanner,
-  onReceive,
-  onReserve,
-  phase,
-  requirements,
-  task,
-}: {
-  onOpenPlanner: () => void;
-  onReceive: () => void;
-  onReserve: () => void;
-  phase: DemoPhase;
-  requirements: Requirement[];
-  task: PlannedTask;
-}) {
-  return (
-    <section className="section-grid">
-      <article className="panel section-card task-list-card">
-        <div className="section-card-head">
-          <div>
-            <p className="eyebrow">PROGRAMA DE OBRA</p>
-            <h2>Tareas activas</h2>
-          </div>
-          <button className="primary-button" onClick={onOpenPlanner} type="button">Nueva tarea</button>
-        </div>
-        <button className="task-list-item selected" type="button">
-          <span className={`task-dot status-${task.status}`} />
-          <span>
-            <b>{task.name}</b>
-            <small>{task.project} · {task.quantity} {task.unit}</small>
-          </span>
-          <span className={`status status-${task.status}`}>{statusLabels[task.status]}</span>
-        </button>
-        <button className="task-list-item" type="button">
-          <span className="task-dot status-planned" />
-          <span>
-            <b>Sellado de juntas</b>
-            <small>Casa Lomas · 20 m²</small>
-          </span>
-          <span className="status">Borrador</span>
-        </button>
-      </article>
-
-      <TaskDetail
-        handleReceive={onReceive}
-        handleReserve={onReserve}
-        phase={phase}
-        requirements={requirements}
-        task={task}
-      />
-    </section>
-  );
-}
-
-function TaskDetail({
+function SummaryTaskDetail({
   handleReceive,
   handleReserve,
   phase,
@@ -503,19 +447,52 @@ function TaskDetail({
     <article className="panel task-panel">
       <div className="panel-head">
         <div>
-          <p className="eyebrow">{task.project.toUpperCase()} · PISO PLANTA BAJA</p>
+          <p className="eyebrow">
+            {task.project.toUpperCase()} · PISO PLANTA BAJA
+          </p>
           <h2>{task.name}</h2>
         </div>
-        <span className={`status status-${task.status}`}>{statusLabels[task.status]}</span>
+        <span className={`status status-${task.status}`}>
+          {TASK_STATUS_LABELS[task.status]}
+        </span>
       </div>
-
       <div className="task-meta">
-        <span><b>{task.quantity}</b> {task.unit} planeados</span>
-        <span><b>{task.responsible}</b> responsable</span>
-        <span><b>2</b> herramientas listas</span>
-        <span><b>{formatDateRange(task.startDate, task.endDate)}</b> ejecución</span>
+        <span>
+          <b>{task.quantity}</b> {task.unit} planeados
+        </span>
+        <span>
+          <b>{task.responsible}</b> responsable
+        </span>
+        <span>
+          <b>2</b> herramientas listas
+        </span>
+        <span>
+          <b>{task.startDate}–{task.endDate}</b> ejecución
+        </span>
       </div>
+      <DemoTaskResources
+        handleReceive={handleReceive}
+        handleReserve={handleReserve}
+        phase={phase}
+        requirements={requirements}
+      />
+    </article>
+  );
+}
 
+function DemoTaskResources({
+  handleReceive,
+  handleReserve,
+  phase,
+  requirements,
+}: {
+  handleReceive: () => void;
+  handleReserve: () => void;
+  phase: DemoPhase;
+  requirements: Requirement[];
+}) {
+  return (
+    <>
       <div className="resource-head">
         <div>
           <h3>Requerimientos calculados</h3>
@@ -550,7 +527,7 @@ function TaskDetail({
         {phase === "received" && <button className="primary-button" onClick={handleReserve} type="button">Reservar materiales</button>}
         {phase === "ready" && <span className="success-message">✓ Reserva auditada y tarea lista</span>}
       </div>
-    </article>
+    </>
   );
 }
 
@@ -879,11 +856,4 @@ function FlowStep({
       <p><b>{label}</b><small>{detail}</small></p>
     </div>
   );
-}
-
-function formatDateRange(startDate: string, endDate: string) {
-  const start = new Date(`${startDate}T12:00:00`);
-  const end = new Date(`${endDate}T12:00:00`);
-  const month = new Intl.DateTimeFormat("es-MX", { month: "short" }).format(end);
-  return `${start.getDate()}–${end.getDate()} ${month}`;
 }

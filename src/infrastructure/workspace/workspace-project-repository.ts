@@ -56,6 +56,7 @@ export class WorkspaceProjectRepository implements ProjectRepository {
     );
     const normalized = normalizeProjectInput({
       ...input,
+      progress: 0,
       responsible: employee.fullName,
       responsibleEmployeeId: employee.id,
     });
@@ -95,6 +96,7 @@ export class WorkspaceProjectRepository implements ProjectRepository {
     const input = {
       ...toProjectInput(presentProject(current, workspace.employees)),
       ...changes,
+      progress: current.progress,
     };
     const employee = assertResponsibleEmployeeAssignable(
       input,

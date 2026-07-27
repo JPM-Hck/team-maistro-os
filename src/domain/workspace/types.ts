@@ -132,6 +132,7 @@ export interface WorkspaceDemoState {
 
 export interface WorkspaceState {
   version: typeof WORKSPACE_VERSION;
+  taskProgressModelVersion: 1;
   revision: number;
   activeProjectId: string | null;
   projects: WorkspaceProject[];

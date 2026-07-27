@@ -3,6 +3,7 @@ import { LocalStorageInventoryRepository } from "../inventory/local-storage-inve
 import { getBrowserWorkspaceStorage } from "./workspace-storage";
 import { WorkspacePayrollRepository } from "./workspace-payroll-repository";
 import { WorkspaceProjectRepository } from "./workspace-project-repository";
+import { WorkspaceTaskRepository } from "./workspace-task-repository";
 
 export function createWorkspaceRepositories() {
   const storage = getBrowserWorkspaceStorage();
@@ -12,6 +13,7 @@ export function createWorkspaceRepositories() {
     inventory: new LocalStorageInventoryRepository({ storage }),
     equipment: new LocalStorageEquipmentRepository({ storage }),
     payroll: new WorkspacePayrollRepository(storage),
+    tasks: new WorkspaceTaskRepository(storage),
   };
 }
 

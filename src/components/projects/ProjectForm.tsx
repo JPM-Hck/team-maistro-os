@@ -200,15 +200,11 @@ export function ProjectForm({
             value={input.budget}
           />
         </ProjectField>
-        <ProjectField error={errors.progress} label="Avance (%)">
-          <input
-            max="100"
-            min="0"
-            onChange={(event) => set("progress", Number(event.target.value))}
-            type="number"
-            value={input.progress}
-          />
-        </ProjectField>
+        <div className="field project-derived-progress">
+          <span>Avance del proyecto</span>
+          <b>{input.progress}%</b>
+          <small>Se calcula automáticamente con el peso de las tareas.</small>
+        </div>
         <ProjectField label="Tarea actual" wide>
           <input
             onChange={(event) => set("currentTask", event.target.value)}

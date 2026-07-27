@@ -89,6 +89,22 @@ workspace. Las relaciones se guardan mediante IDs:
 - al archivar el proyecto activo se selecciona otro proyecto disponible o se
   muestra un estado vacío.
 
+### Tareas y avance automático
+
+Las tareas persistentes se relacionan con proyectos y empleados mediante
+`projectId` y `assigneeIds`. Se pueden crear, editar, terminar, cancelar y
+archivar, además de buscar y filtrar por proyecto, responsable y estado.
+
+El avance general del proyecto ya no se captura manualmente. Se calcula como:
+
+```text
+avance = suma(progreso de tarea × peso) / suma(pesos)
+```
+
+Las tareas terminadas equivalen a 100%. Las canceladas y archivadas no
+participan en el cálculo. Los porcentajes anteriores se conservan mediante una
+tarea de migración marcada para revisión, creada una sola vez.
+
 ## Ejecutar localmente
 
 Requisitos: Node.js 20.9 o superior y pnpm mediante Corepack.

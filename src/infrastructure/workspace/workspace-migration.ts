@@ -11,6 +11,7 @@ import {
 import {
   CASA_LOMAS_PROJECT,
 } from "../../domain/projects/types";
+import { calculateProjectProgress } from "../../domain/tasks/project-progress";
 import {
   WORKSPACE_VERSION,
   type Employee,
@@ -153,6 +154,7 @@ export function migrateLegacyWorkspace(
         updatedAt: project.updatedAt || timestamp,
       };
     });
+  addHistoricalProgressTasks(projects, tasks, timestamp);
 
   const equipmentItems: WorkspaceEquipmentItem[] = legacyEquipment.map(
     (item) => ({
@@ -182,9 +184,13 @@ export function migrateLegacyWorkspace(
   };
   const workspace: WorkspaceState = {
     version: WORKSPACE_VERSION,
+    taskProgressModelVersion: 1,
     revision: 1,
     activeProjectId,
-    projects,
+    projects: projects.map((project) => ({
+      ...project,
+      progress: calculateProjectProgress(tasks, project.id),
+    })),
     employees,
     tasks,
     inventoryItems,
@@ -258,17 +264,30 @@ export function normalizeWorkspace(
   }));
   const tasks = (input.tasks ?? []).map((task) => ({
     ...task,
+    progress: task.status === "completed" ? 100 : task.progress ?? 0,
+    progressWeight: task.progressWeight ?? 1,
+    assigneeIds: task.assigneeIds ?? [],
+    equipmentItemIds: task.equipmentItemIds ?? [],
+    archived: task.archived ?? false,
     needsReview: task.needsReview ?? false,
+  }));
+  if (input.taskProgressModelVersion !== 1) {
+    addHistoricalProgressTasks(projects, tasks, timestamp);
+  }
+  const projectsWithProgress = projects.map((project) => ({
+    ...project,
+    progress: calculateProjectProgress(tasks, project.id),
   }));
   return {
     ...input,
     version: WORKSPACE_VERSION,
+    taskProgressModelVersion: 1,
     revision: input.revision ?? 1,
     activeProjectId: selectActiveProjectId(
-      projects,
+      projectsWithProgress,
       input.activeProjectId,
     ),
-    projects,
+    projects: projectsWithProgress,
     employees,
     tasks,
     inventoryItems: input.inventoryItems ?? [],
@@ -307,6 +326,44 @@ export function normalizeWorkspace(
     },
     updatedAt: input.updatedAt ?? timestamp,
   };
+}
+
+function addHistoricalProgressTasks(
+  projects: WorkspaceProject[],
+  tasks: WorkspaceTask[],
+  timestamp: string,
+) {
+  projects.forEach((project) => {
+    if (
+      project.progress <= 0 ||
+      tasks.some((task) => task.projectId === project.id)
+    ) {
+      return;
+    }
+    tasks.push({
+      id: `task-progress-migrated-${project.id}`,
+      projectId: project.id,
+      name: "Avance histórico por revisar",
+      description:
+        "Tarea creada para conservar el porcentaje anterior del proyecto.",
+      status: project.progress >= 100 ? "completed" : "in_review",
+      progress: Math.min(100, Math.max(0, project.progress)),
+      progressWeight: 1,
+      quantity: 0,
+      unit: "",
+      startDate: project.startDate,
+      targetDate: project.targetDate,
+      assigneeIds: project.responsibleEmployeeId
+        ? [project.responsibleEmployeeId]
+        : [],
+      recipeId: null,
+      equipmentItemIds: [],
+      archived: false,
+      needsReview: true,
+      createdAt: project.createdAt || timestamp,
+      updatedAt: project.updatedAt || timestamp,
+    });
+  });
 }
 
 export function matchEmployeeByName(
